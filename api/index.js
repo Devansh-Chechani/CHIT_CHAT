@@ -4,10 +4,16 @@ import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
+import fs from  'fs';
 import jwt from 'jsonwebtoken';
 import { Message} from './models/Message.js'
 import messageRoutes from './routes/messages.js';
 import authRoutes from './routes/auth.js';
+
+
+
+
+
 
 const app = express();
 dotenv.config();
@@ -16,6 +22,8 @@ app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true // Allow sending cookies and authorization headers
 }));
+
+
 
 app.use(express.json());
 app.use(cookieParser());
@@ -77,7 +85,7 @@ wss.on('connection', (connection, req) => {
     try {
       const messageData = JSON.parse(message.toString());
       const { recipient, text } = messageData;
-      console.log(recipient);
+       
       if (recipient && text) {
 
          const messageDoc = await Message.create({

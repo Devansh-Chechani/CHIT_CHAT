@@ -28,6 +28,7 @@ export const fetchmessages = async (req, res, next) => {
 };
 
 
-export const offlinepeople = async()=>{
-  await User.find({},{'_id':1,username:1})
+export const offlinepeople = async(req,res)=>{
+  const offPeople = await User.find({},{'_id':1,username:1})
+  res.status(200).json(offPeople)
 }
