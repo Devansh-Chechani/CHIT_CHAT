@@ -5,8 +5,57 @@ import Logo from './Logo.js'
 import { UserContext } from './context/UserContext.jsx'
 import {uniqBy} from 'lodash'
 import axios from 'axios'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
   
 export default function Chat() {
+
+
+  const { transcript, resetTranscript } = useSpeechRecognition();
+  const [listening, setListening] = useState(false);
+  const [timeoutId, setTimeoutId] = useState(null);
+
+  useEffect(() => {
+    if (listening) {
+      startListening();
+    } else {
+      stopListening();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listening]);
+
+  useEffect(() => {
+    if (listening && transcript === '') {
+      startTimeout();
+    } else {
+      clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcript, listening]);
+
+  const startListening = () => {
+    SpeechRecognition.startListening();
+  };
+
+  const stopListening = () => {
+    SpeechRecognition.stopListening();
+    clearTimeout(timeoutId);
+  };
+
+  const startTimeout = () => {
+    clearTimeout(timeoutId);
+    const id = setTimeout(() => {
+      stopListening();
+    }, 5000); // Adjust timeout duration as needed (in milliseconds)
+    setTimeoutId(id);
+  };
+
+
+
+
+
+
+
+
     const [ws,setWs] = useState(null)
      const [onlinePeople,setOnlinePeople] = useState({})
      const [offlinePeople,setOfflinePeople] = useState({})
@@ -82,14 +131,17 @@ export default function Chat() {
     }
    
    const sendMessage = (e) => {
-     if(e) e.preventDefault();
+      if(e)e.preventDefault();
   
   //console.log('Sending message:', message); // Log the message before sending
-  ws.send(JSON.stringify({ 
+  if(newMessageText.length > 0){
+    ws.send(JSON.stringify({ 
     recipient: selectedUserId,
     text: newMessageText,
   
    }));
+  }
+  
    setnewMessageText('')
    setMessages(prev => ([...prev ,
     {
@@ -127,6 +179,14 @@ useEffect(()=>{
   }
   
 },[selectedUserId])
+
+  useEffect(() => {
+  if (transcript) {
+    setnewMessageText(transcript);
+    
+  }
+ // resetTranscript(); // Clear the transcript after updating the state
+}, [transcript]);
 
 
 
@@ -197,10 +257,10 @@ useEffect(()=>{
          )}
          </div>
    {selectedUserId && (
-           <form className = "flex gap-2 mb-2 mx-6"  onSubmit = {sendMessage}>
+           <form className = "flex gap-2 mb-2 mx-6"  >
              <input type = "text" 
              value = {newMessageText}
-             onChange = {(e)=>setnewMessageText(e.target.value)}
+             onChange = {(e)=>  setnewMessageText(e.target.value)}
            placeholder = "Type your message here"
            className = "bg-white-border p-2 flex-grow"
          />
@@ -214,10 +274,29 @@ useEffect(()=>{
          </svg>
 
          </label>
-         <button type = 'submit' className = "bg-blue-500 text-white p-2">
+
+       <label  className = "bg-gray-200 text-gray-600 p-2 cursor-pointer">
+         <button className = 'hidden'
+           onClick={(e) => {
+             e.preventDefault();
+              e.stopPropagation();
+              setListening(!listening); }
+         }>
+            
+           </button>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+           <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+       </svg>
+         </label>
+
+
+         <button type = 'button' className = "bg-blue-500 text-white p-2"
+         onClick={sendMessage}
+       >
+
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-</svg>
+    </svg>
 
          </button>
          </form>
